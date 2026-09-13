@@ -23,6 +23,13 @@ button.primary{width:100%;margin-top:12px;border:0;border-radius:14px;padding:13
 .hero{font-size:42px;color:var(--cyan);font-weight:300;line-height:1.05;font-variant-numeric:tabular-nums}.heroLabel{font-size:11px;color:var(--muted);letter-spacing:.11em;text-transform:uppercase;margin-top:5px}
 .results{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:13px}.stat{background:var(--card2);border-radius:14px;padding:13px}.k{font-size:12px;color:var(--muted);margin-bottom:5px}.v{font-size:20px;font-variant-numeric:tabular-nums}.hint{font-size:12px;line-height:1.45;color:var(--muted);margin-top:10px}.hidden{display:none}.warn{color:var(--yellow)}
 @media(max-width:560px){.grid2,.grid3,.results{grid-template-columns:1fr}.hero{font-size:38px}}
+
+.presetQuickGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.presetQuick{background:#272729;border:1px solid #343438;border-radius:14px;padding:14px;text-align:left;color:#fff;cursor:pointer}
+.presetQuick b{display:block;margin-bottom:5px}.presetQuick span{font-size:12px;color:#aeb2bd}
+.presetQuick:hover{border-color:#5a5a60}
+@media(max-width:600px){.presetQuickGrid{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body><div class="app">
@@ -140,7 +147,20 @@ button.primary{width:100%;margin-top:12px;border:0;border-radius:14px;padding:13
 </div>
 </section>
 
+
 <section id="settings" class="hidden">
+<div class="card">
+ <div class="title">Empfohlene Ausgangswerte</div>
+ <div class="hint">Diese Presets sind praktische Startwerte und keine offiziellen Insta360-Vorgaben. Nach der Übernahme kannst du die Werte anpassen und als eigenes Preset speichern.</div>
+ <div class="presetQuickGrid">
+   <button class="presetQuick" data-preset="milky"><b>Milchstraße / Starlapse</b><span>15 s · ISO 800 · 4000 K</span></button>
+   <button class="presetQuick" data-preset="sun"><b>Sonnenauf-/untergang</b><span>Auto · Auto · 5500 K</span></button>
+   <button class="presetQuick" data-preset="clouds"><b>Wolken-Timelapse Tag</b><span>Auto · Auto · 5500 K</span></button>
+   <button class="presetQuick" data-preset="daynight"><b>Tag → Nacht</b><span>Auto · Auto · 5000 K</span></button>
+ </div>
+ <div class="hint" id="presetQuickNote">Tippe auf ein Preset, um die Werte unten zu übernehmen.</div>
+</div>
+
 <div class="card">
  <div class="title">X5 Aufnahme-Preset</div>
  <div class="grid2">
@@ -307,6 +327,35 @@ $("tlInterval").onchange=calcTl;
 $("tlHours").oninput=calcTl;
 $("tlMinutes").oninput=calcTl;
 $("tlCalc").onclick=calcTl;
+
+
+const quickPresets={
+ milky:{name:"Milchstraße / Starlapse",iso:"800",shutter:"15",wb:"4000",note:"Manueller Ausgangspunkt für dunklen Himmel. ISO und Belichtung an Lichtverschmutzung, Mondlicht und Motiv anpassen."},
+ sun:{name:"Sonnenauf-/untergang",iso:"Auto",shutter:"Auto",wb:"5500",note:"Automatische Belichtung als Ausgangspunkt für stark wechselnde Helligkeit."},
+ clouds:{name:"Wolken-Timelapse Tag",iso:"Auto",shutter:"Auto",wb:"5500",note:"Automatische Belichtung als Ausgangspunkt für wechselnde Bewölkung am Tag."},
+ daynight:{name:"Tag → Nacht",iso:"Auto",shutter:"Auto",wb:"5000",note:"Automatische Belichtung als Ausgangspunkt für große Helligkeitsänderungen."}
+};
+function setPresetField(id,value){
+ const e=$(id); if(!e) return;
+ if(e.tagName==="SELECT"){
+   let opt=[...e.options].find(o=>o.value===String(value)||o.textContent.trim()===String(value));
+   if(!opt){
+     opt=document.createElement("option"); opt.value=String(value); opt.textContent=String(value); e.appendChild(opt);
+   }
+   e.value=opt.value;
+ }else e.value=value;
+ e.dispatchEvent(new Event("input",{bubbles:true}));
+ e.dispatchEvent(new Event("change",{bubbles:true}));
+}
+document.querySelectorAll(".presetQuick").forEach(btn=>btn.onclick=()=>{
+ const x=quickPresets[btn.dataset.preset];
+ setPresetField("presetName",x.name);
+ setPresetField("presetISO",x.iso);
+ setPresetField("presetShutter",x.shutter);
+ setPresetField("presetWB",x.wb);
+ setPresetField("presetNote",x.note);
+ $("presetQuickNote").textContent="„"+x.name+"“ wurde übernommen. Du kannst die Werte jetzt anpassen und als eigenes Preset speichern.";
+});
 
 $("savePreset").onclick=()=>{
  const data={name:$("presetName").value,iso:$("iso").value,shutter:$("presetShutter").value,wb:$("wb").value,note:$("note").value};
