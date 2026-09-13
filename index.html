@@ -85,7 +85,7 @@ button.primary{width:100%;margin-top:12px;border:0;border-radius:14px;padding:13
 </div>
 
 <div class="card">
- <div class="hero" id="tlShots">—</div><div class="heroLabel">Timelapse-Frames</div>
+ <div class="hero" id="tlShots">—</div><div class="heroLabel">Aufnahmen / Timelapse-Frames</div>
  <div class="results">
    <div class="stat"><div class="k">Fertige Videolänge</div><div class="v" id="tlVideo">—</div></div>
    <div class="stat"><div class="k">Beschleunigung</div><div class="v" id="tlSpeed">—</div></div>
@@ -196,10 +196,10 @@ function calcTl(){
  const interval=+$("tlInterval").value;
  const fps=30;
  if(!(dur>0&&interval>0))return;
- // Timelapse video length follows Insta360's published Shoot Length ÷ Interval relationship.
- const videoSec=dur/interval;
- const frames=Math.round(videoSec*fps);
- const speed=dur/videoSec;
+ // One captured frame per interval; those frames are played back at 30 fps.
+ const frames=Math.floor(dur/interval);
+ const videoSec=frames/fps;
+ const speed=videoSec>0 ? dur/videoSec : 0;
  const segments=Math.ceil(dur/(90*60));
  $("tlShots").textContent=frames.toLocaleString("de-DE");
  $("tlVideo").textContent=fmtTime(videoSec);
