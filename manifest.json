@@ -1,12 +1,12 @@
 {
-  "name": "Photo Tools",
-  "short_name": "Photo Tools",
+  "name": "X5 Tools",
+  "short_name": "X5 Tools",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#0d0d0d",
   "theme_color": "#0d0d0d",
-  "description": "Offline Foto-Rechner für Astrofotografie und Schärfentiefe.",
+  "description": "Offline-Planungstools für Insta360 X5 Starlapse und Aufnahme-Presets.",
   "icons": [
     {
       "src": "icon-180.png",
