@@ -14,7 +14,7 @@
 :root{--bg:#0d0d0d;--card:#1d1d1f;--card2:#272729;--line:#3a3a3c;--text:#f5f5f7;--muted:#8e8e93;--cyan:#22e6d0;--yellow:#ffbf2f}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;padding:max(18px,env(safe-area-inset-top)) 14px max(22px,env(safe-area-inset-bottom))}
 .app{max-width:720px;margin:auto}header{display:flex;align-items:center;justify-content:space-between;margin:8px 2px 18px}h1{font-size:21px;letter-spacing:.18em;color:var(--yellow);margin:0}.tag{font-size:11px;color:var(--muted)}
-.tabs{display:grid;grid-template-columns:1fr 1fr;gap:7px;background:#171719;padding:6px;border-radius:16px;margin-bottom:14px}.tab{border:0;background:transparent;color:var(--muted);font-weight:750;padding:11px;border-radius:12px}.tab.active{background:var(--card2);color:var(--cyan)}
+.tabs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;background:#171719;padding:6px;border-radius:16px;margin-bottom:14px}.tab{border:0;background:transparent;color:var(--muted);font-weight:750;padding:11px;border-radius:12px}.tab.active{background:var(--card2);color:var(--cyan)}
 .card{background:var(--card);border:1px solid #2c2c2e;border-radius:18px;padding:16px;margin-bottom:14px}.title{font-size:14px;font-weight:750;margin-bottom:12px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:11px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px}
 input,select,textarea{width:100%;background:var(--card2);border:1px solid var(--line);border-radius:12px;color:var(--text);font-size:16px;padding:12px}textarea{resize:vertical;min-height:70px}
@@ -27,7 +27,7 @@ button.primary{width:100%;margin-top:12px;border:0;border-radius:14px;padding:13
 </head>
 <body><div class="app">
 <header><h1>X5 TOOLS</h1><span class="tag">OFFLINE</span></header>
-<div class="tabs"><button class="tab active" data-tab="starlapse">STARLAPSE</button><button class="tab" data-tab="settings">PRESET</button></div>
+<div class="tabs"><button class="tab active" data-tab="starlapse">STARLAPSE</button><button class="tab" data-tab="timelapse">TIMELAPSE</button><button class="tab" data-tab="settings">PRESET</button></div>
 
 <section id="starlapse">
 <div class="card">
@@ -61,6 +61,40 @@ button.primary{width:100%;margin-top:12px;border:0;border-radius:14px;padding:13
    <div class="stat"><div class="k">Pause zwischen Belichtungen</div><div class="v" id="pauseBetween">—</div></div>
  </div>
  <div id="warning" class="hint warn"></div>
+</div>
+</section>
+
+
+<section id="timelapse" class="hidden">
+<div class="card">
+ <div class="title">X5 Timelapse planen</div>
+ <div class="grid2">
+   <div><label>Auflösung</label>
+     <select id="tlResolution">
+       <option value="5.7K">5,7K · 30 fps</option>
+       <option value="8K">8K · 30 fps</option>
+       <option value="11K">11K · 30 fps</option>
+     </select>
+   </div>
+   <div><label>Intervall</label><select id="tlInterval"></select></div>
+   <div><label>Aufnahmedauer – Stunden</label><input id="tlHours" type="number" min="0" value="2" step="1"></div>
+   <div><label>Aufnahmedauer – Minuten</label><input id="tlMinutes" type="number" min="0" max="59" value="0" step="1"></div>
+ </div>
+ <button class="primary" id="tlCalc">Berechnen</button>
+ <div class="hint">Die X5 bietet Timelapse in 5,7K, 8K und 11K mit 30 fps. Für 5,7K ist 0,5 s das kürzeste Intervall; für 8K und 11K mindestens 2 s. Die tatsächlich auf der Kamera angebotenen Optionen haben Vorrang.</div>
+</div>
+
+<div class="card">
+ <div class="hero" id="tlShots">—</div><div class="heroLabel">Timelapse-Frames</div>
+ <div class="results">
+   <div class="stat"><div class="k">Fertige Videolänge</div><div class="v" id="tlVideo">—</div></div>
+   <div class="stat"><div class="k">Beschleunigung</div><div class="v" id="tlSpeed">—</div></div>
+   <div class="stat"><div class="k">Intervall</div><div class="v" id="tlOutInterval">—</div></div>
+   <div class="stat"><div class="k">Aufnahmedauer</div><div class="v" id="tlRealDuration">—</div></div>
+   <div class="stat"><div class="k">Erwartete 90-Min.-Abschnitte</div><div class="v" id="tlSegments">—</div></div>
+ </div>
+ <div class="hint" id="tlAdvice"></div>
+ <div class="hint warn" id="tlWarning"></div>
 </div>
 </section>
 
@@ -142,8 +176,51 @@ $("calc").onclick=calc;
 document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{
  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");
  $("starlapse").classList.toggle("hidden",b.dataset.tab!=="starlapse");
+ $("timelapse").classList.toggle("hidden",b.dataset.tab!=="timelapse");
  $("settings").classList.toggle("hidden",b.dataset.tab!=="settings");
 });
+
+const tlIntervalsAll=[0.5,1,2,5,10,30,60,120];
+function updateTlIntervals(){
+ const res=$("tlResolution").value;
+ const min=res==="5.7K"?0.5:2;
+ const old=parseFloat($("tlInterval").value);
+ const vals=tlIntervalsAll.filter(v=>v>=min);
+ $("tlInterval").innerHTML=vals.map(v=>`<option value="${v}">${String(v).replace(".",",")} s</option>`).join("");
+ if(vals.includes(old)) $("tlInterval").value=String(old);
+ else $("tlInterval").value=String(res==="5.7K"?2:2);
+ calcTl();
+}
+function calcTl(){
+ const dur=(+$("tlHours").value*3600)+(+ $("tlMinutes").value*60);
+ const interval=+$("tlInterval").value;
+ const fps=30;
+ if(!(dur>0&&interval>0))return;
+ // Timelapse video length follows Insta360's published Shoot Length ÷ Interval relationship.
+ const videoSec=dur/interval;
+ const frames=Math.round(videoSec*fps);
+ const speed=dur/videoSec;
+ const segments=Math.ceil(dur/(90*60));
+ $("tlShots").textContent=frames.toLocaleString("de-DE");
+ $("tlVideo").textContent=fmtTime(videoSec);
+ $("tlSpeed").textContent=speed.toFixed(interval<10?1:0)+"×";
+ $("tlOutInterval").textContent=String(interval).replace(".",",")+" s";
+ $("tlRealDuration").textContent=fmtTime(dur);
+ $("tlSegments").textContent=segments.toLocaleString("de-DE");
+ let advice="";
+ if(interval<=1) advice="Sehr kurzes Intervall: besonders flüssig bei schneller Bewegung.";
+ else if(interval<=5) advice="Kurzes Intervall: gut für deutlich sichtbare Veränderungen, z. B. Sonnenauf- oder -untergang.";
+ else if(interval<=30) advice="Mittleres Intervall: passend für langsamere Wolken- und Landschaftsveränderungen.";
+ else advice="Langes Intervall: für sehr langsame Veränderungen über längere Zeiträume.";
+ $("tlAdvice").textContent=advice;
+ $("tlWarning").textContent=dur>90*60 ? `Hinweis: Bei ${fmtTime(dur)} Aufnahmedauer ist mit etwa ${segments} Timelapse-Dateiabschnitten zu rechnen; die X5 erzeugt im Timelapse-Modus alle 90 Minuten ein neues Creative-Video.` : "";
+}
+$("tlResolution").onchange=updateTlIntervals;
+$("tlInterval").onchange=calcTl;
+$("tlHours").oninput=calcTl;
+$("tlMinutes").oninput=calcTl;
+$("tlCalc").onclick=calcTl;
+
 $("savePreset").onclick=()=>{
  const data={name:$("presetName").value,iso:$("iso").value,shutter:$("presetShutter").value,wb:$("wb").value,note:$("note").value};
  localStorage.setItem("x5Preset",JSON.stringify(data));$("saveMsg").textContent="Preset gespeichert.";
@@ -153,6 +230,7 @@ try{
  if(d){$("presetName").value=d.name||"";$("iso").value=d.iso||"";$("presetShutter").value=d.shutter||"";$("wb").value=d.wb||"";$("note").value=d.note||"";}
 }catch(e){}
 calc();
+updateTlIntervals();
 if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(()=>{}));
 </script>
 </body></html>
