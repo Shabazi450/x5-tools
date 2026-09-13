@@ -58,6 +58,7 @@ button.primary{width:100%;margin-top:12px;border:0;border-radius:14px;padding:13
    <div class="stat"><div class="k">Gesamtbelichtungszeit</div><div class="v" id="exposure">—</div></div>
    <div class="stat"><div class="k">Reale Aufnahmedauer</div><div class="v" id="realDuration">—</div></div>
    <div class="stat"><div class="k">Auslastung</div><div class="v" id="duty">—</div></div>
+   <div class="stat"><div class="k">Pause zwischen Belichtungen</div><div class="v" id="pauseBetween">—</div></div>
  </div>
  <div id="warning" class="hint warn"></div>
 </div>
@@ -122,8 +123,18 @@ function calc(){
  $("speed").textContent=(realDur/videoSec).toFixed(0)+"×";
  $("exposure").textContent=fmtTime(totalExp);
  $("realDuration").textContent=fmtTime(realDur);
+ const pause=interval-shutter;
  $("duty").textContent=Math.min(999,(shutter/interval*100)).toFixed(0)+" %";
- $("warning").textContent=shutter>interval ? "Achtung: Die Verschlusszeit ist länger als das berechnete/gewählte Intervall. Diese Kombination ist zeitlich nicht möglich." : "";
+ $("pauseBetween").textContent=pause>=0 ? (pause<10?pause.toFixed(1):pause.toFixed(0))+" s" : "nicht möglich";
+ if(shutter>interval){
+   $("warning").textContent="Achtung: Die Verschlusszeit ist länger als das Intervall. Diese Kombination ist zeitlich nicht möglich.";
+ }else if(Math.abs(shutter-interval)<0.0001){
+   $("warning").textContent="Hinweis: Keine Pause zwischen den Belichtungen. Das Intervall entspricht genau der Verschlusszeit.";
+ }else if(pause<1){
+   $("warning").textContent="Hinweis: Weniger als 1 Sekunde Pause zwischen den Belichtungen.";
+ }else{
+   $("warning").textContent="";
+ }
 }
 $("modeDuration").onclick=()=>setMode("duration");
 $("modeVideo").onclick=()=>setMode("video");
